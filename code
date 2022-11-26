@@ -1,0 +1,325 @@
+# *************** THE SHISHUKUNJ INTERNATIONAL SCHOOL **********************
+# ***************HOTEL MANAGEMENT SYSTEM **************************
+################## HOTEL ANCODA #############################
+# ******* Designed and Maintained By : *******
+# ******* HRISHUBH ZATAKIA - CLASS XII D *******
+import mysql.connector as sqltor
+
+# GLOBAL VARIABLES DECLARATION
+mycon = ''
+username = ''
+password = ''
+roomrent = 0
+restaurantbill = 0
+gamingbill = 0
+totalAmount = 0
+c_id = ''
+c_heads = ''
+name = ''
+no_of_days = ''
+
+
+# FUNCTION TO ENTER CUSTOMER DATA
+def userEntry() -> object:
+    global c_id
+    global c_heads
+    global name
+    cursor = mycon.cursor()
+    create_table = '''CREATE TABLE IF NOT EXISTS C_DETAILS (C_ID INT NOT NULL PRIMARY KEY, C_NAME VARCHAR(30) NOT 
+    NULL, C_AGE INT NOT NULL, C_COUNTRY VARCHAR(30), P_NO BIGINT NOT NULL, C_EMAIL VARCHAR(30), C_HEADS INT NOT NULL) '''
+    cursor.execute(create_table)
+    c_id = int(input('Enter Customer Aadhar Number : '))
+    name = input('Enter Customer Name : ')
+    age = int(input('Enter Customer Age : '))
+    nationality = input('Enter Customer Country : ')
+    phone_no = int(input('Enter Customer Contact Number : '))
+    email_id = input('Enter Customer Email : ')
+    c_heads = int(input('Enter no. of heads: '))
+    sql = 'INSERT INTO C_Details VALUES(%s,%s,%s,%s,%s,%s,%s)'
+    values = (c_id, name, age, nationality, phone_no, email_id, c_heads)
+    cursor.execute(sql,values)
+    cursor.execute('COMMIT')
+    print('\n Data Entered Successfully')
+    cursor.close()
+
+
+# FUNCTION TO SEARCH FOR A CUSTOMER
+def searchCustomer():
+    global c_id
+    cursor = mycon.cursor()
+    c_id = input('Enter Customer Aadhar Number : ')
+    sql = 'SELECT * FROM C_DETAILS WHERE C_ID = %s'
+    cursor.execute(sql, (c_id,))
+    data = cursor.fetchall()
+    if data:
+        print(data)
+        return True
+    else:
+        print('Record not found.')
+        return False
+    cursor.close()
+
+
+# FUNCTION TO ENTER CUSTOMER CHECK-IN AND CHECK-OUT DATES
+def bookingRecord():
+    global c_id
+    if not searchCustomer():
+        return
+    cursor = mycon.cursor()
+    create_table = 'CREATE TABLE IF NOT EXISTS BOOKING_RECORD (C_ID INT NOT NULL REFERENCES C_DETAILS(C_ID)' \
+                   ' ON DELETE CASCADE ON UPDATE CASCADE,CHECK_IN DATE ,CHECK_OUT DATE)'
+    cursor.execute(create_table)
+    checkin = input('\n Enter Customer CheckIN Date [ YYYY-MM-DD ] : ')
+    checkout = input('\n Enter Customer CheckOUT Date [ YYYY-MM-DD ] : ')
+    sql = 'INSERT INTO BOOKING_RECORD VALUES(%s,%s,%s)'
+    values = (c_id, checkin, checkout)
+    cursor.execute(sql, values)
+    cursor.execute('COMMIT')
+    print('\n Check-in and Check-out dates entered successfully')
+    cursor.close()
+
+
+# FUNCTION TO CALCULATE RENT
+def roomRent():
+    global c_id
+    global no_of_days
+    if not searchCustomer():
+        return
+    cursor = mycon.cursor()
+    create_table = 'CREATE TABLE IF NOT EXISTS ROOM_RENT(C_ID INT NOT NULL REFERENCES C_DETAILS(C_ID)' \
+                   ' ON DELETE CASCADE ON UPDATE CASCADE, ROOM_CHOICE INT, NO_OF_DAYS INT, ROOM_NO INT, ' \
+                   'ROOM_RENT INT)'
+    cursor.execute(create_table)
+    print('\n ##### We have The Following Rooms For You #####')
+    print(' 1. Ultra Royal ----> 10000 Rs.')
+    print(' 2. Royal ----> 5000 Rs. ')
+    print(' 3. Elite ----> 3500 Rs. ')
+    print(' 4. Budget ----> 2500 Rs. ')
+    room_type = int(input('Enter Your Option : '))
+    room_no = int(input('Enter Customer Room No : '))
+    if room_no:
+        pass
+    no_of_days = int(input('Enter No. Of Days : '))
+    if room_type == 1:
+        room_rent = no_of_days * 10000
+        print('\n Ultra Royal Room Rent : ', room_rent)
+    elif room_type == 2:
+        room_rent = no_of_days * 5000
+        print('\n Royal Room Rent : ', room_rent)
+    elif room_type == 3:
+        room_rent = no_of_days * 3500
+        print('\n Elite Royal Room Rent : ', room_rent)
+    elif room_type == 4:
+        room_rent = no_of_days * 2500
+        print('\n Budget Room Rent : ', room_rent)
+    else:
+        print('Invalid Room Type ')
+    sql = 'INSERT INTO ROOM_RENT VALUES(%s,%s,%s,%s,%s)'
+    values = (c_id, room_type, no_of_days, room_no, room_rent)
+    cursor.execute(sql, values)
+    cursor.execute('COMMIT')
+    print('Thank You , Your Room Has Been Booked For : ', no_of_days, 'days')
+    print('Your Total Room Rent is : Rs. ', room_rent)
+    cursor.close()
+
+
+# FUNCTION TO ENTER FOOD BILL
+def restaurant():
+    if not searchCustomer():
+        return
+    global c_id
+    global restaurantbill
+    cursor = mycon.cursor()
+    create_table = 'CREATE TABLE IF NOT EXISTS RESTAURANT(C_ID INT NOT NULL REFERENCES C_DETAILS(C_ID)' \
+                   ' ON DELETE CASCADE ON UPDATE CASCADE, CUISINE VARCHAR(30), QUANTITY INT NOT NULL,' \
+                   ' BILL INT NOT NULL)'
+    cursor.execute(create_table)
+    print('1. Vegetarian Combo -----> 300 Rs.')
+    print('2. Non-Vegetarian Combo -----> 500 Rs.')
+    print('3. Vegetarian & Non-Vegetarian Combo -----> 750 Rs.')
+    dish_code = int(input('Enter Your Cuisine : '))
+    dish_dict = {1: 'Vegetarian Combo', 2: 'Non-Vegetarian Combo', 3: 'Vegetarian & Non-Vegetarian Combo'}
+    cuisine = dish_dict[dish_code]
+    quantity = int(input('Enter the no. of meals per day : '))
+    if dish_code == 1:
+        print('\nSO YOU HAVE ORDER: Vegetarian Combo ')
+        restaurantbill = quantity * 300
+    elif dish_code == 2:
+        print('\nSO YOU HAVE ORDER: Non-Vegetarian Combo ')
+        restaurantbill = quantity * 500
+    elif dish_code == 3:
+        print('\n SO YOU HAVE ORDER: Vegetarian & Non-Vegetarian Combo ')
+        restaurantbill = quantity * 750
+    else:
+        print('Invalid dish choice')
+    sql = 'INSERT INTO RESTAURANT VALUES(%s,%s,%s,%s)'
+    values = (c_id, cuisine, quantity, restaurantbill)
+    cursor.execute(sql, values)
+    cursor.execute('COMMIT')
+    print('Your Total Bill Amount Is : Rs. ', restaurantbill)
+    print('\n\n**** WE HOPE YOU WILL ENJOY YOUR MEAL ***\n\n')
+    cursor.close()
+
+
+def Gaming():
+    if not searchCustomer():
+        return
+    global c_id
+    global gamingbill
+    cursor = mycon.cursor()
+    create_table = 'CREATE TABLE IF NOT EXISTS GAMING(C_ID INT NOT NULL REFERENCES C_DETAILS(C_ID) ' \
+                   'ON DELETE CASCADE ON UPDATE CASCADE, GAMES VARCHAR(30), HOURS INT,' \
+                   'GAMING_BILL INT)'
+    cursor.execute(create_table)
+    print('''
+ 1. Table Tennis -----> 150 Rs./HR
+ 2. Bowling -----> 100 Rs./HR
+ 3. Snooker -----> 250 Rs./HR
+ 4. VR World Gaming -----> 400 Rs./HR
+ 5. Video Games -----> 300 Rs./HR
+ 6. Swimming Pool Games -----> 350 Rs./HR
+ 7. Exit
+ ''')
+    game_code = int(input('Enter Game Code: '))
+    game_dict = {1: 'Table Tennis', 2: 'Bowling', 3: 'Snooker', 4: 'VR World Gaming', 5: 'Video Games',
+                 6: 'Swimming Pool Games'}
+    hours = int(input('Enter No Of Hours You Want To Play : '))
+    print('\n\n#################################################')
+    if game_code == 1:
+        print('You Have Selected to Play : Table Tennis.')
+        gamingbill = hours * 150
+    elif game_code == 2:
+        print('You Have Selected to Play : Bowling.')
+        gamingbill = hours * 100
+    elif game_code == 3:
+        print('You Have Selected to Play : Snooker.')
+        gamingbill = hours * 250
+    elif game_code == 4:
+        print('You Have Selected to Play : VR World Gaming.')
+        gamingbill = hours * 400
+    elif game_code == 5:
+        print('You Have Selected to Play : Video Games.')
+        gamingbill = hours * 300
+    elif game_code == 6:
+        print('You Have Selected to Play : Swimming Pool Games.')
+        gamingbill = hours * 350
+    else:
+        print('Invalid Game Code.')
+    sql = 'INSERT INTO GAMING VALUES(%s,%s,%s,%s)'
+    values = (c_id, game_dict[game_code], hours, gamingbill)
+    cursor.execute(sql, values)
+    cursor.execute('COMMIT')
+    print('Your Total Gaming Bill Is : Rs. ', gamingbill)
+    print('FOR : ', hours, ' HOURS', '\n *** WE HOPE YOU WILL ENJOY YOUR GAME ***')
+    print('\n\n#################################################')
+    cursor.close()
+
+
+def totalAmount():
+    if not searchCustomer():
+        return
+    cursor = mycon.cursor()
+    create_table = 'CREATE TABLE IF NOT EXISTS TOTAL_AMOUNT(C_ID INT NOT NULL REFERENCES C_DETAILS(C_ID) ' \
+                   'ON DELETE CASCADE ON UPDATE CASCADE, C_NAME VARCHAR(30),' \
+                   ' ROOM_RENT INT, restaurant_bill INT, gaming_bill INT, total_amount INT)'
+    cursor.execute(create_table)
+    sql = 'INSERT INTO TOTAL_AMOUNT VALUES(%s,%s,%s,%s,%s,%s)'
+    cursor.execute('SELECT C_NAME FROM C_DETAILS WHERE C_ID=%s',(c_id,))
+    name = (cursor.fetchone())[0]
+    cursor.execute('SELECT ROOM_RENT FROM ROOM_RENT WHERE C_ID=%s', (c_id,))
+    roomrent= (cursor.fetchone())[0]
+    cursor.execute('SELECT BILL FROM RESTAURANT WHERE C_ID=%s', (c_id,))
+    restaurantbill = (cursor.fetchone())[0]
+    cursor.execute('SELECT GAMING_BILL FROM GAMING WHERE C_ID=%s', (c_id,))
+    gamingbill = (cursor.fetchone())[0]
+    grand_total = roomrent + restaurantbill + gamingbill
+    values = (c_id, name, roomrent, restaurantbill, gamingbill, grand_total)
+    cursor.execute(sql, values)
+    cursor.execute('COMMIT')
+    cursor.close()
+    print('\n **** HOTEL ANCODA **** CUSTOMER BILLING ****')
+    print('\n CUSTOMER NAME : ', name)
+    print('\n ROOM RENT : Rs. ', roomrent)
+    print('\n RESTAURANT BILL : Rs. ', restaurantbill)
+    print('\n GAMING BILL : Rs. ', gamingbill)
+    print('___________________________________________________')
+    print('\n TOTAL AMOUNT : Rs. ', grand_total)
+    cursor.close()
+
+
+def searchOldBill():
+    global c_id
+    if not searchCustomer():
+        return
+    cursor = mycon.cursor()
+    sql = 'SELECT * FROM TOTAL_AMOUNT WHERE c_id= %s'
+    cursor.execute(sql, (c_id,))
+    data = cursor.fetchall()
+    if data:
+        print(data)
+    else:
+        print('Record Not Found Try Again !')
+        cursor.close()
+
+
+#################################################################################################
+
+# __main__
+print('''
+*************** THE SHISHUKUNJ INTERNATIONAL SCHOOL **********************
+***************HOTEL MANAGEMENT SYSTEM **************************
+##################### HOTEL ANCODA #############################
+******* Designed and Maintained By : *******
+******* HRISHUBH ZATAKYIA - CLASS XII D *******
+******* TEJASWA SINGH MEHRA - CLASS XII D *******
+''')
+
+# CHECKING MYSQL CONNECTIVITY
+
+username = input('\n Enter MySQL username : ')
+password = input('\n ENTER MySQL password : ')
+mycon1 = sqltor.connect(host='localhost', user=username, passwd=password)
+if mycon1.is_connected():
+    print('\n MySQL connection has been established.')
+    cursor1 = mycon1.cursor()
+    cursor1.execute('CREATE DATABASE IF NOT EXISTS Hotel_Management')
+    cursor1.execute('COMMIT')
+    cursor1.close()
+else:
+    print('\n Error establishing connection with MySQL. Please check your username and password.')
+
+mycon = sqltor.connect(host='localhost', user=username, passwd=password, database='Hotel_Management')
+
+while True:
+    print('''
+    1 - -->Enter Customer Details
+    2 - -->Booking Record
+    3 - -->Calculate Room Rent
+    4 - -->Calculate Restaurant Bill
+    5 - -->Calculate Gaming Bill
+    6 - -->Display Customer Details
+    7 - -->GENERATE TOTAL BILL AMOUNT
+    8 - -->GENERATE OLD BILL
+    9 - -->EXIT
+    ''')
+    choice = int(input('Enter Your Choice : '))
+    if choice == 1:
+        userEntry()
+    elif choice == 2:
+        bookingRecord()
+    elif choice == 3:
+        roomRent()
+    elif choice == 4:
+        restaurant()
+    elif choice == 5:
+        Gaming()
+    elif choice == 6:
+        searchCustomer()
+    elif choice == 7:
+        totalAmount()
+    elif choice == 8:
+        searchOldBill()
+    elif choice == 9:
+        break
+    else:
+        print('Invalid choice.')
